@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C:\> Find_Birthday_Gift.exe</title>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+    :root {
+      --bg-color: #0d0d0d;
+      --term-green: #00ff66;
+      --term-dim: #008833;
+      --heart-red: #ff3366;
+      --flower-yellow: #ffcc00;
+      --flower-rose: #ff4488;
+      --flower-blue: #33aaff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--term-green);
+      font-family: 'VT323', 'Pretendard', monospace;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    /* CRT Screen Filter */
+    .crt-screen {
+      width: 90vw;
+      max-width: 720px;
+      height: 85vh;
+      max-height: 600px;
+      background: #050505;
+      border: 3px solid var(--term-dim);
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0, 255, 102, 0.2), inset 0 0 15px rgba(0, 0, 0, 0.8);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    .crt-screen::before {
+      content: " ";
+      display: block;
+      position: absolute;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+      background-size: 100% 4px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    /* Terminal Header */
+    .terminal-header {
+      border-bottom: 2px dashed var(--term-dim);
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+      font-size: 1.2rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Main Scene Layout */
+    .scene-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    /* Character & Visual Box */
+    .visual-box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    /* ASCII / Pixel Character Display */
+    .character-avatar {
+      font-family: monospace;
+      white-space: pre;
+      font-size: 1rem;
+      line-height: 1.1;
+      color: #fff;
+      text-shadow: 0 0 8px var(--term-green);
+      margin-bottom: 10px;
+      text-align: center;
+      transition: transform 0.2s;
+    }
+
+    /* Dialogue Box */
+    .dialogue-box {
+      border: 2px solid var(--term-green);
+      background: rgba(0, 20, 0, 0.8);
+      padding: 15px;
+      min-height: 110px;
+      border-radius: 6px;
+      font-size: 1.2rem;
+      line-height: 1.4;
+      position: relative;
+      margin-top: 10px;
+    }
+
+    .typing-text {
+      color: #ffffff;
+      text-shadow: 0 0 5px var(--term-green);
+    }
+
+    /* Mini Game Container */
+    .game-area {
+      display: none;
+      width: 100%;
+      height: 200px;
+      border: 2px solid #fff;
+      position: relative;
+      background: #000;
+      margin: 10px 0;
+      overflow: hidden;
+    }
+
+    /* Game 1: Dodge Heart */
+    #heart {
+      position: absolute;
+      color: var(--heart-red);
+      font-size: 18px;
+      width: 20px;
+      height: 20px;
+      text-align: center;
+      line-height: 20px;
+    }
+
+    .thorn {
+      position: absolute;
+      color: var(--term-dim);
+      font-size: 16px;
+    }
+
+    /* Game 2: Rhythm Bar */
+    .rhythm-bar-bg {
+      width: 80%;
+      height: 24px;
+      border: 2px solid #fff;
+      position: absolute;
+      top: 50%; left: 10%;
+      transform: translateY(-50%);
+    }
+
+    .rhythm-target {
+      width: 40px;
+      height: 100%;
+      background: var(--flower-yellow);
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0.6;
+    }
+
+    .rhythm-cursor {
+      width: 6px;
+      height: 100%;
+      background: #fff;
+      position: absolute;
+      left: 0;
+    }
+
+    /* Action Buttons (ACT) */
+    .act-buttons {
+      display: none;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .btn-act {
+      background: #000;
+      border: 2px solid var(--term-green);
+      color: var(--term-green);
+      padding: 10px;
+      font-family: inherit;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-act:hover {
+      background: var(--term-green);
+      color: #000;
+    }
+
+    /* Final Message Box */
+    .letter-box {
+      display: none;
+      border: 2px double var(--term-green);
+      padding: 20px;
+      background: rgba(0, 30, 10, 0.95);
+      color: #fff;
+      font-size: 1.1rem;
+      line-height: 1.6;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0, 255, 102, 0.4);
+      text-align: center;
+    }
+
+    .next-indicator {
+      position: absolute;
+      bottom: 8px;
+      right: 12px;
+      font-size: 0.9rem;
+      color: var(--term-dim);
+      animation: blink 0.8s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="crt-screen">
+  <div class="terminal-header">
+    <span>C:\SYS\BIRTHDAY_QUEST.EXE</span>
+    <span id="status-tag">[FLOWER: 0/3]</span>
+  </div>
+
+  <div class="scene-container">
+    <div class="visual-box">
+      <!-- 난쟁이 캐릭터 & 꽃 스택 -->
+      <div id="character" class="character-avatar">
+   (•_•)  
+  &lt;(   )&gt; 
+   /   \  
+      </div>
+
+      <!-- 미니게임 캔버스 영역 -->
+      <div id="gameArea" class="game-area">
+        <div id="heart">♥</div>
+        <div id="rhythmBar" class="rhythm-bar-bg" style="display:none;">
+          <div class="rhythm-target"></div>
+          <div id="rhythmCursor" class="rhythm-cursor"></div>
+        </div>
+      </div>
+
+      <!-- 최종 편지 박스 -->
+      <div id="letterBox" class="letter-box">
+        <h2 style="color: var(--flower-yellow); margin-bottom: 12px;">🎉 HAPPY BIRTHDAY! 🎉</h2>
+        <p id="letterContent"></p>
+      </div>
+    </div>
+
+    <!-- [ACT] 선택지 -->
+    <div id="actButtons" class="act-buttons">
+      <button class="btn-act" onclick="chooseAct('praise')">1. 칭찬하기</button>
+      <button class="btn-act" onclick="chooseAct('birthday')">2. 오늘 생일이라고 말하기</button>
+      <button class="btn-act" onclick="chooseAct('tickle')">3. 간지럽히기</button>
+      <button class="btn-act" onclick="chooseAct('dance')">4. 같이 춤추기</button>
+    </div>
+
+    <!-- 대화상자 -->
+    <div id="dialogueBox" class="dialogue-box" onclick="handleNextStep()">
+      <div id="typingText" class="typing-text"></div>
+      <div class="next-indicator">▼ 클릭하여 계속</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 오디오 비프음 생성 (Web Audio API)
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  function playBeep(freq = 440, duration = 0.05) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.value = freq;
+    gain.gain.value = 0.03;
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+  }
+
+  // 텍스트 타이핑 애니메이션
+  let isTyping = false;
+  let typingTimer = null;
+  function typeWriter(text, callback) {
+    const el = document.getElementById('typingText');
+    el.innerHTML = '';
+    let i = 0;
+    isTyping = true;
+    
+    clearInterval(typingTimer);
+    typingTimer = setInterval(() => {
+      if (i < text.length) {
+        el.innerHTML += text.charAt(i);
+        playBeep(300 + Math.random() * 100, 0.03);
+        i++;
+      } else {
+        clearInterval(typingTimer);
+        isTyping = false;
+        if (callback) callback();
+      }
+    }, 40);
+  }
+
+  // 캐릭터 아트 렌더링
+  const dwarfArt = [
+    // 0: 기본
+`   (•_•)  
+  <(   )> 
+   /   \\  `,
+    // 1: 꽃 1개 획득 (자기 키만한 장미)
+`   🌹
+  (•_•)  
+  <(   )> 
+   /   \\  `,
+    // 2: 꽃 2개 획득 (장미 + 해바라기)
+`  🌻 🌹
+   (•_•)  
+  <(   )> 
+   /   \\  `,
+    // 3: 거대 꽃다발 완성 (땀 삐질)
+` 🌹 🌻 🪻
+  (💦•̀_•́) 
+  <(   )> 
+   /   \\  `
+  ];
+
+  function updateCharacter(stage) {
+    document.getElementById('character').innerText = dwarfArt[stage];
+  }
+
+  // 게임 진행 상태 관리
+  let step = 0;
+  let flowersCount = 0;
+
+  function updateStatus() {
+    document.getElementById('status-tag').innerText = `[FLOWER: ${flowersCount}/3]`;
+  }
+
+  // 스토리 단계별 처리
+  function handleNextStep() {
+    if (isTyping) return;
+
+    step++;
+    if (step === 1) {
+      typeWriter("어?... 왔어? 오늘이 무슨 날인지 알고 찾아온 거 맞아?", () => {});
+    } else if (step === 2) {
+      typeWriter("맞다, 오늘 너 생일이지! 내가 특별한 선물을 주려고 준비했어.", () => {});
+    } else if (step === 3) {
+      typeWriter("내 키보다 훨씬 커다란 '전설의 꽃다발'을 만들 건데... 혼자선 무거워. 같이 모아줄래?", () => {});
+    } else if (step === 4) {
+      // 미니게임 1 시작 (가시 피하기)
+      startMinigame1();
+    } else if (step === 6) {
+      typeWriter("우와! 가시에 안 찔리고 첫 번째 장미(🌹)를 얻었어! (낑낑대며 뒤에 짊어진다)", () => {
+        flowersCount = 1;
+        updateStatus();
+        updateCharacter(1);
+      });
+    } else if (step === 7) {
+      typeWriter("두 번째는 따스한 햇빛을 머금은 커다란 해바라기(🌻)야. 스페이스바나 클릭으로 게이지 중앙을 맞쳐줘!", () => {});
+    } else if (step === 8) {
+      startMinigame2();
+    } else if (step === 10) {
+      typeWriter("좋았어! 두 번째 해바라기(🌻)도 완성! 벌써 꽃이 나보다 커졌네...", () => {
+        flowersCount = 2;
+        updateStatus();
+        updateCharacter(2);
+      });
+    } else if (step === 11) {
+      typeWriter("마지막 세 번째 꽃은 수줍음이 많아. 마음을 열도록 대화를 시도해 보자!", () => {});
+    } else if (step === 12) {
+      showActMenu();
+    } else if (step === 14) {
+      // 꽃다발 완성과 촛불 불기
+      flowersCount = 3;
+      updateStatus();
+      updateCharacter(3);
+      document.getElementById('gameArea').style.display = 'none';
+      typeWriter("우와아! 내 키의 몇 배나 되는 거대 꽃다발(🌹🌻🪻) 완성! 가운데에 생일 촛불(🕯️)도 꽂았어!", () => {});
+    } else if (step === 15) {
+      typeWriter("자! 하나, 둘, 셋 하면 촛불을 '후-' 하고 불어서 꺼줘! (화면 클릭)", () => {});
+    } else if (step === 16) {
+      // 최종 엔딩 편지 해금
+      showFinalLetter();
+    }
+  }
+
+  /* --- 미니게임 1: 하트 가시 피하기 --- */
+  let heartPos = { x: 150, y: 90 };
+  let thorns = [];
+  let game1Interval, thornSpawnInterval;
+
+  function startMinigame1() {
+    document.getElementById('gameArea').style.display = 'block';
+    typeWriter("★ 방향키(WASD)나 마우스로 빨간 하트(♥)를 움직여 가시를 5초간 피하세요!", () => {
+      initGame1();
+    });
+  }
+
+  function initGame1() {
+    const area = document.getElementById('gameArea');
+    const heart = document.getElementById('heart');
+    heartPos = { x: area.clientWidth / 2 - 10, y: area.clientHeight / 2 - 10 };
+    heart.style.left = heartPos.x + 'px';
+    heart.style.top = heartPos.y + 'px';
+
+    // 마우스/터치 이동
+    area.onmousemove = (e) => {
+      const rect = area.getBoundingClientRect();
+      heartPos.x = e.clientX - rect.left - 10;
+      heartPos.y = e.clientY - rect.top - 10;
+      heart.style.left = heartPos.x + 'px';
+      heart.style.top = heartPos.y + 'px';
+    };
+
+    let timeLeft = 5;
+    thornSpawnInterval = setInterval(() => {
+      const thorn = document.createElement('div');
+      thorn.className = 'thorn';
+      thorn.innerText = '▲';
+      thorn.style.left = Math.random() * (area.clientWidth - 20) + 'px';
+      thorn.style.top = '0px';
+      area.appendChild(thorn);
+      thorns.push(thorn);
+    }, 200);
+
+    game1Interval = setInterval(() => {
+      // 가시 이동
+      thorns.forEach((t, index) => {
+        let top = parseFloat(t.style.top);
+        top += 4;
+        t.style.top = top + 'px';
+        if (top > area.clientHeight) {
+          t.remove();
+          thorns.splice(index, 1);
+        }
+      });
+
+      timeLeft -= 0.05;
+      if (timeLeft <= 0) {
+        clearInterval(game1Interval);
+        clearInterval(thornSpawnInterval);
+        thorns.forEach(t => t.remove());
+        area.onmousemove = null;
+        step = 5;
+        handleNextStep();
+      }
+    }, 50);
+  }
+
+  /* --- 미니게임 2: 타이밍 맞추기 --- */
+  let rhythmPos = 0;
+  let rhythmSpeed = 4;
+  let rhythmInterval;
+
+  function startMinigame2() {
+    document.getElementById('gameArea').style.display = 'block';
+    document.getElementById('heart').style.display = 'none';
+    document.getElementById('rhythmBar').style.display = 'block';
+
+    const cursor = document.getElementById('rhythmCursor');
+    const area = document.getElementById('rhythmBar');
+    let dir = 1;
+
+    rhythmInterval = setInterval(() => {
+      rhythmPos += rhythmSpeed * dir;
+      if (rhythmPos > area.clientWidth - 6 || rhythmPos < 0) {
+        dir *= -1;
+      }
+      cursor.style.left = rhythmPos + 'px';
+    }, 20);
+
+    const checkTiming = () => {
+      const targetMin = area.clientWidth / 2 - 20;
+      const targetMax = area.clientWidth / 2 + 20;
+      if (rhythmPos >= targetMin && rhythmPos <= targetMax) {
+        playBeep(600, 0.2);
+        clearInterval(rhythmInterval);
+        document.body.onclick = null;
+        document.getElementById('rhythmBar').style.display = 'none';
+        step = 9;
+        handleNextStep();
+      } else {
+        playBeep(150, 0.1); // 실패음
+      }
+    };
+
+    setTimeout(() => {
+      document.body.onclick = checkTiming;
+    }, 200);
+  }
+
+  /* --- 3단계: [ACT] 선택 대화 --- */
+  function showActMenu() {
+    document.getElementById('actButtons').style.display = 'grid';
+  }
+
+  function chooseAct(type) {
+    document.getElementById('actButtons').style.display = 'none';
+    if (type === 'praise') {
+      typeWriter("마법의 꽃에게 '참 예쁘다'라고 칭찬해 주었다. 꽃이 부끄러워하며 활짝 피어났다!", () => {
+        step = 13;
+      });
+    } else if (type === 'birthday') {
+      typeWriter("오늘 축하해 줄 주인공의 생일이라고 설명했다. 꽃이 축하의 미소를 지으며 흔들렸다!", () => {
+        step = 13;
+      });
+    } else {
+      typeWriter("꽃을 살살 간지럽혔다. 꺄르르 웃으며 스스로 꽃다발 속으로 들어왔다!", () => {
+        step = 13;
+      });
+    }
+  }
+
+  /* --- 최종 편지 박스 출력 --- */
+  function showFinalLetter() {
+    document.getElementById('dialogueBox').style.display = 'none';
+    document.getElementById('letterBox').style.display = 'block';
+    
+    playBeep(523.25, 0.1); // C5
+    setTimeout(() => playBeep(659.25, 0.1), 150); // E5
+    setTimeout(() => playBeep(783.99, 0.3), 300); // G5 (폭죽 사운드)
+
+    const letterText = 
+      "생일 진심으로 축하해! 🎂\n\n" +
+      "자기 키만한 꽃을 모으느라 낑낑대는 귀여운 난쟁이처럼,\n" +
+      "오늘 하루 너에게 세상에서 가장 커다란 행복과 웃음이 가득했으면 좋겠어.\n\n" +
+      "언제나 응원하고 축하해! 오늘 맛있는 거 많이 먹고 제일 행복한 하루 보내! ✨";
+
+    let i = 0;
+    const target = document.getElementById('letterContent');
+    target.innerHTML = '';
+    const timer = setInterval(() => {
+      if (i < letterText.length) {
+        target.innerHTML += letterText.charAt(i) === '\n' ? '<br>' : letterText.charAt(i);
+        i++;
+      } else {
+        clearInterval(timer);
+      }
+    }, 50);
+  }
+
+  // 첫 오프닝 타이핑
+  typeWriter("C:\\> system_check.exe ... SUCCESS!\n* 의지가 가득 차오른다.", () => {});
+</script>
+</body>
+</html>
