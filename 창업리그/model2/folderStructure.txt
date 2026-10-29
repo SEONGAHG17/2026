@@ -1,0 +1,7 @@
+concert_model2/
+ ┣ config/
+ ┃  ┗ nav2_params.yaml         <-- 드론 주행 및 회피 제어 파라미터 설정
+ ┣ launch/
+ ┃  ┗ model2_nav_launch.py     <-- Nav2 서버들과 지도 로더를 실행하는 런치 파일
+ ┣ package.xml
+ ┗ setup.py
