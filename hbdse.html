@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>C:\> 918_Flowers_Quest.exe</title>
+  <title>C:\> Undertale_World_Search.exe</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
@@ -60,7 +60,7 @@
     }
 
     canvas {
-      background: #0d0d12;
+      background: #09090e;
       border: 2px solid var(--term-green);
       display: block;
       margin: 0 auto;
@@ -91,15 +91,16 @@
 
 <div class="crt-screen">
   <div class="header">
-    <span id="roomTitle">ROOM: [ 1번 방 : 시작의 들판 ]</span>
+    <span>WORLD MAP [2000 x 2000]</span>
     <span id="flowerCount" style="color: #ffcc00;">[FLOWER: 0 / 918]</span>
   </div>
 
-  <canvas id="gameCanvas" width="700" height="340"></canvas>
+  <!-- 화면 카메라 크기: 720 x 360 -->
+  <canvas id="gameCanvas" width="720" height="360"></canvas>
 
   <div class="dialogue-box">
-    <div id="dialogueText">방향키로 맵을 이동하고, 문(🚪)에 닿으면 다른 방으로 넘어갑니다! 꽃을 찾아 [Z]를 누르세요.</div>
-    <div class="guide">이동: 방향키(WASD) / 채집: Z 또는 Space / 맵 이동: 문(🚪)으로 들어가기</div>
+    <div id="dialogueText">거대한 맵을 자유롭게 돌아다니며 918개의 꽃을 수집하세요! [방향키 이동 / Z 채집]</div>
+    <div class="guide">카메라 스크롤 / 조작: 방향키, Z 또는 Space</div>
   </div>
 </div>
 
@@ -108,6 +109,7 @@
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
 
+  // Web Audio API 사운드
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   function playBeep(freq = 440, duration = 0.04) {
     if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -122,53 +124,45 @@
     osc.stop(audioCtx.currentTime + duration);
   }
 
-  let gameState = 'EXPLORE'; // EXPLORE, MINIGAME, ENDING
-  let totalCollected = 0;
-  const targetCount = 918;
+  // 1. 거대한 가상 월드 맵 크기 정의
+  const WORLD = {
+    width: 2000,
+    height: 2000
+  };
 
-  // 플레이어 객체
+  // 2. 카메라(Viewport) 정의
+  let camera = {
+    x: 0,
+    y: 0,
+    width: canvas.width,
+    height: canvas.height
+  };
+
+  // 3. 난쟁이 플레이어 (월드 좌표계)
   let player = {
-    x: 100,
-    y: 170,
+    x: 1000, // 맵 중앙에서 시작
+    y: 1000,
     size: 20,
-    speed: 3,
+    speed: 4,
     emotion: null,
     emotionTimer: 0
   };
 
-  // 멀티 룸 데이터 구조 (언더테일식 방 이동)
-  let currentRoom = 1;
-  const rooms = {
-    1: {
-      name: "1번 방 : 시작의 들판",
-      doors: [{ x: 670, y: 150, w: 20, h: 60, targetRoom: 2, targetX: 40, targetY: 170 }],
-      flowers: [
-        { id: 101, x: 200, y: 100, collected: false, color: '#ff3366' },
-        { id: 102, x: 350, y: 250, collected: false, color: '#ffcc00' },
-        { id: 103, x: 500, y: 120, collected: false, color: '#33aaff' }
-      ]
-    },
-    2: {
-      name: "2번 방 : 안개 낀 꽃밭",
-      doors: [
-        { x: 10, y: 150, w: 20, h: 60, targetRoom: 1, targetX: 630, targetY: 170 },
-        { x: 670, y: 150, w: 20, h: 60, targetRoom: 3, targetX: 40, targetY: 170 }
-      ],
-      flowers: [
-        { id: 201, x: 250, y: 80, collected: false, color: '#ff77ff' },
-        { id: 202, x: 400, y: 270, collected: false, color: '#33ffaa' }
-      ]
-    },
-    3: {
-      name: "3번 방 : 비밀의 온실 (끝판왕)",
-      doors: [{ x: 10, y: 150, w: 20, h: 60, targetRoom: 2, targetX: 630, targetY: 170 }],
-      flowers: [
-        { id: 301, x: 300, y: 170, collected: false, color: '#ff3333' },
-        { id: 302, x: 450, y: 100, collected: false, color: '#ffff33' },
-        { id: 303, x: 500, y: 250, collected: false, color: '#33ffff' }
-      ]
-    }
-  };
+  // 4. 거대 맵 전체에 랜덤으로 배치되는 918개의 꽃 데이터 생성
+  let flowers = [];
+  const totalTarget = 918;
+  let collectedCount = 0;
+
+  const flowerColors = ['#ff3366', '#ffcc00', '#33aaff', '#ff77ff', '#33ffaa'];
+  for (let i = 0; i < totalTarget; i++) {
+    flowers.push({
+      id: i,
+      x: Math.floor(Math.random() * (WORLD.width - 100)) + 50,
+      y: Math.floor(Math.random() * (WORLD.height - 100)) + 50,
+      collected: false,
+      color: flowerColors[i % flowerColors.length]
+    });
+  }
 
   let keys = {};
   window.addEventListener('keydown', e => {
@@ -176,7 +170,7 @@
     if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'z'].includes(e.key.toLowerCase())) {
       e.preventDefault();
     }
-    if ((e.key === 'z' || e.key === ' ' || e.key.toLowerCase() === 'z') && gameState === 'EXPLORE') {
+    if ((e.key === 'z' || e.key === ' ' || e.key.toLowerCase() === 'z')) {
       tryGatherFlower();
     }
   });
@@ -186,132 +180,111 @@
     document.getElementById('dialogueText').innerText = text;
   }
 
-  // 꽃 채집 시도
+  // 꽃 채집 로직
   function tryGatherFlower() {
-    let room = rooms[currentRoom];
-    for (let f of room.flowers) {
+    let found = false;
+    for (let f of flowers) {
       if (!f.collected) {
         let dist = Math.hypot(player.x - f.x, player.y - f.y);
-        if (dist < 40) {
+        if (dist < 35) { // 주변 꽃 채집
           f.collected = true;
-          totalCollected += 306; // 3개 방에서 총 8개 정도 돌면 918 채워지도록 설정 세팅 (또는 1개당 115씩 가중치)
-          if (totalCollected > targetCount) totalCollected = targetCount;
-
-          document.getElementById('flowerCount').innerText = `[FLOWER: ${totalCollected} / ${targetCount}]`;
-          playBeep(880, 0.1);
-
-          player.emotion = '♥';
-          player.emotionTimer = 45;
-
-          if (totalCollected >= targetCount) {
-            gameState = 'ENDING';
-            setDialogue("🎉 918송이의 꽃다발 완벽 채집 성공! 진심으로 생일 축하해!! ✨");
-          } else {
-            setDialogue(`꽃을 채집했다! 현재 누적: ${totalCollected}송이 / 918송이`);
-          }
-          return;
+          collectedCount++;
+          found = true;
         }
       }
     }
-  }
 
-  // 맵 이동 체크
-  function checkDoors() {
-    let room = rooms[currentRoom];
-    for (let d of room.doors) {
-      if (player.x > d.x && player.x < d.x + d.w && player.y > d.y && player.y < d.y + d.h) {
-        currentRoom = d.targetRoom;
-        player.x = d.targetX;
-        player.y = d.targetY;
-        document.getElementById('roomTitle').innerText = `ROOM: [ ${rooms[currentRoom].name} ]`;
-        playBeep(400, 0.15);
+    if (found) {
+      document.getElementById('flowerCount').innerText = `[FLOWER: ${collectedCount} / ${totalTarget}]`;
+      playBeep(880, 0.05);
+      player.emotion = '♥';
+      player.emotionTimer = 30;
+
+      if (collectedCount >= totalTarget) {
+        setDialogue("🎉 918송이의 꽃다발을 전부 모았습니다! 생일 축하해!! ✨");
+      } else {
+        setDialogue(`꽃을 채집했습니다! (누적: ${collectedCount} / ${totalTarget})`);
       }
     }
   }
 
-  // 렌더링 함수들
-  function drawPixelDwarf(x, y) {
-    ctx.fillStyle = '#ff5555';
-    ctx.fillRect(x - 8, y - 10, 16, 14);
-    ctx.fillStyle = '#ffcc99';
-    ctx.fillRect(x - 6, y - 6, 12, 8);
-    ctx.fillStyle = '#000';
-    ctx.fillRect(x - 4, y - 4, 2, 2);
-    ctx.fillRect(x + 2, y - 4, 2, 2);
-
-    if (player.emotionTimer > 0) {
-      ctx.fillStyle = '#fff';
-      ctx.font = '16px VT323';
-      ctx.fillText(player.emotion, x + 10, y - 14);
-      player.emotionTimer--;
-    }
-  }
-
+  // 플레이어 이동 및 카메라 추적 연동
   function update() {
-    if (gameState === 'EXPLORE') {
-      let dx = 0, dy = 0;
-      if (keys['arrowleft'] || keys['a']) dx = -player.speed;
-      if (keys['arrowright'] || keys['d']) dx = player.speed;
-      if (keys['arrowup'] || keys['w']) dy = -player.speed;
-      if (keys['arrowdown'] || keys['s']) dy = player.speed;
+    let dx = 0, dy = 0;
+    if (keys['arrowleft'] || keys['a']) dx = -player.speed;
+    if (keys['arrowright'] || keys['d']) dx = player.speed;
+    if (keys['arrowup'] || keys['w']) dy = -player.speed;
+    if (keys['arrowdown'] || keys['s']) dy = player.speed;
 
-      player.x += dx;
-      player.y += dy;
+    player.x += dx;
+    player.y += dy;
 
-      // 맵 경계 제한
-      player.x = Math.max(30, Math.min(670, player.x));
-      player.y = Math.max(30, Math.min(310, player.y));
+    // 월드 맵 경계 제한
+    player.x = Math.max(20, Math.min(WORLD.width - 20, player.x));
+    player.y = Math.max(20, Math.min(WORLD.height - 20, player.y));
 
-      checkDoors();
-    }
+    // ★ 핵심: 카메라가 플레이어를 중앙에 두도록 따라감
+    camera.x = player.x - camera.width / 2;
+    camera.y = player.y - camera.height / 2;
+
+    // 카메라가 월드 맵 밖으로 나가지 않도록 고정
+    camera.x = Math.max(0, Math.min(WORLD.width - camera.width, camera.x));
+    camera.y = Math.max(0, Math.min(WORLD.height - camera.height, camera.y));
   }
 
   function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 맵 격자 배경 (언더테일 필드 느낌)
-    ctx.strokeStyle = '#151522';
-    ctx.lineWidth = 1;
-    for (let i = 0; i < canvas.width; i += 35) {
-      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+    ctx.save();
+    // ★ 핵심: 카메라 위치만큼 좌표계를 이동시켜 스크롤 연출 구현
+    ctx.translate(-camera.x, -camera.y);
+
+    // 1. 거대 월드 테두리 및 격자 배경
+    ctx.strokeStyle = '#222233';
+    ctx.lineWidth = 2;
+    for (let x = 0; x <= WORLD.width; x += 50) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, WORLD.height); ctx.stroke();
     }
-    for (let j = 0; j < canvas.height; j += 35) {
-      ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(canvas.width, j); ctx.stroke();
+    for (let y = 0; y <= WORLD.height; y += 50) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(WORLD.width, y); ctx.stroke();
     }
 
-    if (gameState === 'EXPLORE') {
-      let room = rooms[currentRoom];
+    // 맵 외각 테두리
+    ctx.strokeStyle = '#00ff66';
+    ctx.strokeRect(0, 0, WORLD.width, WORLD.height);
 
-      // 문(🚪) 그리기
-      room.doors.forEach(d => {
-        ctx.fillStyle = '#00ff66';
-        ctx.fillRect(d.x, d.y, d.w, d.h);
-        ctx.fillStyle = '#000';
-        ctx.font = '12px VT323';
-        ctx.fillText("DOOR", d.x - 2, d.y - 5);
-      });
-
-      // 꽃들 그리기
-      room.flowers.forEach(f => {
-        if (!f.collected) {
+    // 2. 월드 맵 상의 918개 꽃 렌더링 (화면에 보이는 영역만)
+    flowers.forEach(f => {
+      if (!f.collected) {
+        // 화면 최적화 (카메라 바깥의 꽃은 그리지 않음)
+        if (f.x > camera.x - 20 && f.x < camera.x + camera.width + 20 &&
+            f.y > camera.y - 20 && f.y < camera.y + camera.height + 20) {
           ctx.fillStyle = f.color;
-          ctx.fillRect(f.x - 6, f.y - 6, 12, 12);
+          ctx.fillRect(f.x - 5, f.y - 5, 10, 10);
           ctx.fillStyle = '#fff';
           ctx.fillRect(f.x - 2, f.y - 2, 4, 4);
         }
-      });
+      }
+    });
 
-      // 플레이어 그리기
-      drawPixelDwarf(player.x, player.y);
-    } else if (gameState === 'ENDING') {
-      ctx.fillStyle = '#ffcc00';
-      ctx.font = '28px VT323';
-      ctx.fillText("🌻 918송이 전설의 꽃다발 완성! 🌻", 140, 140);
+    // 3. 난쟁이 플레이어 렌더링
+    ctx.fillStyle = '#ff5555';
+    ctx.fillRect(player.x - 8, player.y - 10, 16, 14);
+    ctx.fillStyle = '#ffcc99';
+    ctx.fillRect(player.x - 6, player.y - 6, 12, 8);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(player.x - 4, player.y - 4, 2, 2);
+    ctx.fillRect(player.x + 2, player.y - 4, 2, 2);
+
+    // 감정 이모션
+    if (player.emotionTimer > 0) {
       ctx.fillStyle = '#fff';
-      ctx.font = '18px VT323';
-      ctx.fillText("이 넓은 맵을 돌아다니며 918개를 채우느라 수고했어!", 160, 190);
-      ctx.fillText("오늘 세상에서 가장 행복한 생일을 보내길 바라! ✨", 160, 230);
+      ctx.font = '16px VT323';
+      ctx.fillText(player.emotion, player.x + 10, player.y - 14);
+      player.emotionTimer--;
     }
+
+    ctx.restore(); // 좌표계 복원
   }
 
   function gameLoop() {
