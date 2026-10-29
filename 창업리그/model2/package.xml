@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>concert_model2</name>
+  <version>1.0.0</version>
+  <description>Real-time localization and navigation control pipeline for indoor concert drone using Nav2 and OctoMap.</description>
+  
+  <maintainer email="seongah@domain.com">Seong-ah Gwak</maintainer>
+  <license>Apache-2.0</license>
+
+  <!-- 모델 2 구동에 필수적인 ROS 2 의존성 패키지들 선언 -->
+  <depend>rclpy</depend>
+  <depend>nav2_bringup</depend>
+  <depend>octomap_server</depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
