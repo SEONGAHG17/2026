@@ -1,0 +1,9 @@
+concert_model1/
+ ┣ config/
+ ┃  ┣ octomap_params.yaml      <-- 3D 격자(Voxel) 변환 설정 파일
+ ┃  ┗ rtabmap_params.yaml      <-- SLAM 위치 추정 및 맵핑 설정 파일
+ ┣ launch/
+ ┃  ┗ model1_pipeline_launch.py <-- RTAB-Map과 OctoMap을 동시에 켜는 통합 런치 파일
+ ┣ maps/                       <-- 최종 .bt 지도 파일이 저장될 폴더
+ ┣ package.xml                 <-- 패키지 의존성 정의 파일
+ ┗ setup.py (또는 CMakeLists.txt) <-- 빌드 설정 파일
