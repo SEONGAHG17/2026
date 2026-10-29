@@ -1,0 +1,7 @@
+# 3D Voxel 격자 변환 설정 파일
+octomap_server_node:
+  ros__parameters:
+    resolution: 0.05          # 복셀 크기 (0.05m = 5cm 간격으로 공간 정밀 분할)
+    frame_id: "map"           # 기준 좌표계
+    sensor_model/max_range: 10.0 # 라이다 유효 감지 거리 (최대 10미터)
+    base_frame_id: "base_link"   # 드론 동체 좌표계
