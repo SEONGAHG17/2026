@@ -1,0 +1,23 @@
+# SLAM 위치 추정 및 맵핑 설정 파일
+rtabmap:
+  ros__parameters:
+    # 1. 좌표계 설정
+    frame_id: "base_link"        # 드론 동체의 중심 좌표계 이름
+    map_frame_id: "map"          # 전체 지도의 기준이 되는 고정 좌표계 이름
+    
+    # 2. 센서 구독 설정 (라이다 드론 기준)
+    subscribe_depth: false       # 깊이 카메라를 안 쓸 경우 false
+    subscribe_rgb: false         # 컬러 카메라를 안 쓸 경우 false
+    subscribe_laser_scan: true   # 라이다 스캔 데이터를 받겠다고 선언 (true)
+    approx_sync: true            # 센서 데이터 간의 시간 동기화 허용 오차 보정
+    
+    # 3. SLAM 알고리즘 세부 파라미터
+    # Reg/Strategy: 0 (Visual - 시각 기반), 1 (ICP - 라이다 점군 매칭 기반), 2 (둘 다 결합)
+    Reg/Strategy: "1"            
+    
+    # 루프 클로저(Loop Closure: "아까 갔던 방에 다시 돌아왔구나!" 하고 오차를 보정하는 기능) 감도 설정
+    # 값이 낮을수록 엄격하게 검증, 높을수록 관대하게 매칭
+    Vis/MinInliers: "20"
+    
+    # 2D/3D 점군 기반 격자 지도(Occupancy Grid) 생성 여부
+    RGBD/CreateOccupancyGrid: "true"
