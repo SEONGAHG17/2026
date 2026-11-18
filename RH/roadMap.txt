@@ -1,0 +1,39 @@
+[Kwe?on]
+RNA물류 로봇으로 시작한거임
+
+모터제어 - 응용 버전으로 
+라이다/센서 처리
+비전인식
+지율제어 기술
+ROS 
+
+-- 라이다랑 센서는 무조건
+-- 비전 인식은 나중에 
+
+
+-------------------------------------------
+[for ROBOT]
+1. 주변환경 인식      --Sensing
+2. 자신의 상태 파악   --State Estimation
+3. 움직임 결정        --Planning
+4. 실질적 구동        --Control
+
+VISION: 카메라로 사람, 물체, 차선 등을 인식합니다.
+LiDAR: 주변 물체와의 거리 및 공간 구조를 파악합니다.
+SENSOR: 가속도, 각속도, 바퀴 회전량 등을 측정합니다.
+SELF: 로봇의 현재 위치와 방향을 추정합니다.
+ROS: 센서 데이터를 통합하고 이동 경로를 계획합니다.
+MOTOR: 계산된 명령에 따라 실제 바퀴를 회전시킵니다.
+
+MOTOR – 모터 구조, 구동 원리, 토크, RPM, 엔코더, PID 제어
+LiDAR / SENSOR – 센서 종류, 측정 원리, Point Cloud, IMU, Sensor Fusion
+VISION – OpenCV, Image Processing, Object Detection, Deep Learning
+SELF – Odometry, Localization, SLAM, Mapping, Path Planning
+ROS2 – Node, Topic, Service, Action, TF2, Gazebo, Nav2
+
+
+[MOTOR]
+[LIDAT/SENSOR]
+[VISION]
+[SELF]
+[ROS]
